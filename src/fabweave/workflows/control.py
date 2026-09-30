@@ -14,6 +14,7 @@ from fabweave.dispatch.priority import DispatchCandidate, rank_candidates
 from fabweave.energy.demand import demand_violations
 from fabweave.genealogy.carrier import GenealogyGraph
 from fabweave.holds.release import HoldState, release_decision
+from fabweave.kit.preparation import KitBook, KitLine, KitResult
 from fabweave.lot.merge import Lot, merge_lots
 from fabweave.maintenance.window import MaintenancePolicy, assignment_decision
 from fabweave.metrology.sampling import Wafer, deterministic_sample
@@ -87,6 +88,17 @@ def reserve_qualified(
         return combined
     reserved = book.reserve_batch(request_id, requested)
     return allow(request_id=request_id, reservation_count=len(reserved))
+
+
+def prepare_kit(book: KitBook, request_id: str, lines: list[KitLine]) -> KitResult:
+    """Prepare a chemical + critical-part kit atomically.
+
+    Delegates to the kit book, which evaluates opened shelf life (freeze
+    pauses honored), recipe qualification, time conflicts and duplicate
+    occupancy before committing, rolls the whole kit back on any failure and
+    returns the stored result when the same request is replayed.
+    """
+    return book.prepare(request_id, lines)
 
 
 def qualified_assignment(
